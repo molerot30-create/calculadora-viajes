@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cotizador Argentina — GrandVoyage</title>
+  <style>
+    :root {
+      --azul:       #1a3a5c;
+      --azul-med:   #2563a8;
+      --azul-claro: #e8f0fb;
+      --dorado:     #c9a227;
+      --gris-borde: #d1d5db;
+      --gris-fondo: #f3f4f6;
+      --verde-bg:   #dcfce7;
+      --verde-txt:  #166534;
+      --texto:      #111827;
+      --subtexto:   #6b7280;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #eef2f7;
+      color: var(--texto);
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--azul);
+      color: #fff;
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,.25);
+    }
+    header .brand   { font-size: 1.4rem; font-weight: 800; letter-spacing: .05em; }
+    header .sub     { font-size: .8rem; opacity: .7; margin-top: .1rem; }
+    header .badge   {
+      margin-left: auto;
+      background: var(--dorado);
+      font-size: .68rem; font-weight: 700;
+      padding: .2rem .65rem; border-radius: 20px;
+      text-transform: uppercase; letter-spacing: .08em;
+    }
+
+    /* ── Layout ── */
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 1.25rem;
+      max-width: 1180px;
+      margin: 1.25rem auto;
+      padding: 0 1rem;
+      align-items: start;
+    }
+    @media (max-width: 880px) { .layout { grid-template-columns: 1fr; } }
+
+    /* ── Cards ── */
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 1px 6px rgba(0,0,0,.07);
+      margin-bottom: 1rem;
+      overflow: hidden;
+    }
+    .card-head {
+      background: var(--azul);
+      color: #fff;
+      padding: .6rem 1.15rem;
+      font-size: .73rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .08em;
+    }
+    .card-body { padding: 1.1rem; }
+
+    /* ── Form ── */
+    .field { margin-bottom: .85rem; }
+    .field:last-child { margin-bottom: 0; }
+    label {
+      display: block;
+      font-size: .72rem; font-weight: 700;
+      color: #374151;
+      text-transform: uppercase; letter-spacing: .04em;
+      margin-bottom: .28rem;
+    }
+    select, input[type="number"], input[type="date"], input[type="text"] {
+      width: 100%;
+      padding: .52rem .8rem;
+      border: 1.5px solid var(--gris-borde);
+      border-radius: 7px;
+      font-size: .9rem;
+      color: var(--texto);
+      background: var(--gris-fondo);
+      transition: border-color .15s, background .15s;
+      appearance: none; -webkit-appearance: none;
+    }
+    select:focus, input:focus { outline: none; border-color: var(--azul-med); background: #fff; }
+
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+    .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .75rem; }
+    .sep  { height: 1px; background: var(--gris-borde); margin: .85rem 0; }
+
+    /* ── Info box (circuito) ── */
+    .info-circ {
+      background: var(--azul-claro);
+      border: 1.5px solid #c3d4ee;
+      border-radius: 8px;
+      padding: .7rem .95rem;
+      font-size: .8rem;
+      margin-top: .6rem;
+    }
+    .info-circ .ruta { font-weight: 700; color: var(--azul); margin-bottom: .18rem; }
+    .info-circ .meta { color: var(--subtexto); font-size: .75rem; }
+    .info-circ .nota {
+      margin-top: .45rem;
+      font-size: .73rem; color: #7c3aed;
+      background: #f5f3ff;
+      border-left: 3px solid #7c3aed;
+      padding: .3rem .5rem;
+      border-radius: 0 4px 4px 0;
+    }
+
+    /* ── Season badge ── */
+    .badge-temp {
+      display: inline-flex; align-items: center; gap: .35rem;
+      padding: .28rem .7rem;
+      border-radius: 20px;
+      font-size: .73rem; font-weight: 700;
+      margin-top: .4rem;
+    }
+    .t-ok  { background: #dcfce7; color: #15803d; }
+    .t-err { background: #fee2e2; color: #991b1b; }
+
+    /* ── Tierra fields ── */
+    .tierra-row {
+      display: grid;
+      grid-template-columns: 1fr 28px 1fr;
+      align-items: end;
+      gap: .5rem;
+      margin-bottom: .85rem;
+    }
+    .tierra-row .arrow { text-align: center; color: var(--subtexto); padding-bottom: .55rem; font-size: 1.1rem; }
+    .tierra-row .sub-label { font-size: .67rem; color: var(--subtexto); margin-bottom: .22rem; }
+    .tierra-row .sub-label.eur { color: var(--verde-txt); }
+    .eur-box {
+      padding: .52rem .8rem;
+      border: 1.5px solid #86efac;
+      border-radius: 7px;
+      background: var(--verde-bg);
+      color: var(--verde-txt);
+      font-size: .9rem; font-weight: 700;
+    }
+
+    /* ── Actividades dinámicas ── */
+    .act-list { display: flex; flex-direction: column; gap: .45rem; margin-bottom: .5rem; }
+    .act-item {
+      display: grid;
+      grid-template-columns: 1fr 100px 28px;
+      gap: .45rem;
+      align-items: center;
+      background: #f9fafb;
+      border: 1.5px solid var(--gris-borde);
+      border-radius: 7px;
+      padding: .45rem .7rem;
+    }
+    .act-item input { border: none; background: transparent; font-size: .88rem; padding: .18rem 0; }
+    .act-item input[type="number"] { text-align: right; }
+    .act-item input:focus { border-bottom: 1.5px solid var(--azul-med); }
+    .btn-rm {
+      background: none; border: none; cursor: pointer;
+      color: #f87171; font-size: 1rem; line-height: 1; padding: 0;
+    }
+    .btn-rm:hover { color: #dc2626; }
+    .btn-add {
+      display: inline-flex; align-items: center; gap: .3rem;
+      border: 1.5px dashed var(--azul-med);
+      background: none; color: var(--azul-med);
+      font-size: .78rem; font-weight: 700;
+      padding: .38rem .8rem; border-radius: 7px; cursor: pointer;
+      transition: background .15s;
+    }
+    .btn-add:hover { background: var(--azul-claro); }
+
+    /* ── Niños section ── */
+    #card-ninos { display: none; }
+
+    /* ── Calcular button ── */
+    .btn-calc {
+      width: 100%; padding: .85rem;
+      background: var(--dorado); color: #fff; border: none;
+      border-radius: 10px; font-size: .95rem; font-weight: 800;
+      text-transform: uppercase; letter-spacing: .05em; cursor: pointer;
+      box-shadow: 0 3px 12px rgba(201,162,39,.35);
+      transition: background .2s, transform .1s;
+    }
+    .btn-calc:hover  { background: #b8901f; transform: translateY(-1px); }
+    .btn-calc:active { transform: translateY(0); }
+
+    /* ── Results ── */
+    .results { position: sticky; top: 1rem; }
+    .res-head {
+      background: var(--azul); color: #fff;
+      padding: .85rem 1.15rem;
+    }
+    .res-head h2 { font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; opacity: .85; }
+    .res-body { padding: 1rem; }
+
+    .bl-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: .4rem 0; border-bottom: 1px solid #f3f4f6;
+      font-size: .82rem;
+    }
+    .bl-item:last-child { border-bottom: none; }
+    .bl-item .lbl  { color: var(--subtexto); }
+    .bl-item .val  { font-weight: 600; }
+
+    .bl-sub {
+      display: flex; justify-content: space-between; align-items: center;
+      background: var(--azul-claro);
+      border-radius: 6px; padding: .45rem .75rem; margin: .4rem 0;
+      font-size: .85rem;
+    }
+    .bl-sub .lbl { color: var(--azul); font-weight: 700; }
+    .bl-sub .val { color: var(--azul); font-size: .95rem; font-weight: 800; }
+
+    .bl-sub.verde {
+      background: var(--verde-bg);
+    }
+    .bl-sub.verde .lbl, .bl-sub.verde .val { color: var(--verde-txt); }
+
+    .total-block {
+      background: linear-gradient(135deg, var(--azul), #2563a8);
+      border-radius: 10px; padding: 1.1rem;
+      color: #fff; text-align: center; margin-top: .75rem;
+    }
+    .total-block .tl  { font-size: .73rem; opacity: .8; text-transform: uppercase; letter-spacing: .08em; }
+    .total-block .ta  { font-size: 1.9rem; font-weight: 800; margin: .25rem 0; }
+    .total-block .ts  { font-size: .75rem; opacity: .75; }
+
+    .sec-label {
+      font-size: .7rem; color: var(--subtexto);
+      text-transform: uppercase; letter-spacing: .06em;
+      margin: .75rem 0 .4rem;
+    }
+
+    .empty {
+      text-align: center; padding: 2rem 1rem; color: var(--subtexto);
+    }
+    .empty .ico { font-size: 2rem; margin-bottom: .5rem; }
+    .empty p { font-size: .82rem; }
+
+    .nota-info {
+      font-size: .72rem; color: #92400e;
+      background: #fffbeb; border-left: 3px solid #fbbf24;
+      padding: .3rem .5rem; border-radius: 0 4px 4px 0;
+      margin-top: .4rem;
+    }
+
+    .warn-tag {
+      display: inline-block;
+      font-size: .63rem; font-weight: 700;
+      background: #fef3c7; color: #92400e;
+      padding: .1rem .35rem; border-radius: 3px;
+      margin-left: .3rem; vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="brand">GrandVoyage</div>
+    <div class="sub">Cotizador de Viajes · Argentina</div>
+  </div>
+  <div class="badge">Nuevo Tarifario 2026</div>
+</header>
+
+<div class="layout">
+
+  <!-- ══ COLUMNA FORMULARIO ══ -->
+  <div>
+
+    <!-- 1. Selección del circuito -->
+    <div class="card">
+      <div class="card-head">1 · Selección del Circuito</div>
+      <div class="card-body">
+        <div class="field">
+          <label>Circuito</label>
+          <select id="sel-circ" onchange="onCircuitChange()">
+            <option value="">— Seleccionar circuito —</option>
+          </select>
+        </div>
+        <div id="info-circ" style="display:none" class="info-circ">
+          <div class="ruta" id="ic-vuelos-int"></div>
+          <div class="ruta" id="ic-vuelos-internos" style="font-size:.76rem; margin-top:.15rem;"></div>
+          <div class="meta" id="ic-meta"></div>
+          <div class="nota" id="ic-nota" style="display:none"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Configuración del grupo -->
+    <div class="card">
+      <div class="card-head">2 · Configuración del Grupo</div>
+      <div class="card-body">
+        <div class="row3">
+          <div class="field">
+            <label>Habitación</label>
+            <select id="sel-hab" onchange="onConfigChange()">
+              <option value="DBL">Doble (DBL)</option>
+              <option value="SGL">Individual (SGL)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Categoría</label>
+            <select id="sel-cat" onchange="onConfigChange()">
+              <option value="P">Primera (Turista)</option>
+              <option value="S">Superior (Primera)</option>
+              <option value="L">Lujo (1ª Superior)</option>
+            </select>
+          </div>
+          <div class="field">
+            <!-- placeholder for grid alignment -->
+          </div>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label>N.° Adultos</label>
+            <input type="number" id="n-adultos" min="1" value="2"
+                   oninput="onPaxChange(); calculate()" />
+          </div>
+          <div class="field">
+            <label>N.° Niños <span style="font-weight:400; text-transform:none;">(compartiendo cama)</span></label>
+            <input type="number" id="n-ninos" min="0" value="0"
+                   oninput="onPaxChange(); calculate()" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Fechas -->
+    <div class="card">
+      <div class="card-head">3 · Fechas del Viaje</div>
+      <div class="card-body">
+        <div class="row2">
+          <div class="field">
+            <label>Llegada a destino</label>
+            <input type="date" id="f-llegada" onchange="onDateChange()" />
+          </div>
+          <div class="field">
+            <label>Salida del destino</label>
+            <input type="date" id="f-salida" onchange="onDateChange()" />
+          </div>
+        </div>
+        <div id="fecha-info"></div>
+      </div>
+    </div>
+
+    <!-- 4. Costes adultos -->
+    <div class="card">
+      <div class="card-head">4 · Costes por Persona — Adultos</div>
+      <div class="card-body">
+
+        <!-- Tierra -->
+        <div class="field">
+          <label>Coste Neto Tierra <span class="warn-tag">AUTO · editable</span></label>
+          <div class="tierra-row">
+            <div>
+              <div class="sub-label">USD (del tarifario)</div>
+              <input type="number" id="tierra-usd" min="0" step="0.01"
+                     placeholder="0.00" oninput="calculate()" />
+            </div>
+            <div class="arrow">→</div>
+            <div>
+              <div class="sub-label eur">EUR (convertido)</div>
+              <div class="eur-box" id="tierra-eur">0,00 €</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="row2">
+          <div class="field">
+            <label>Otros servicios tierra (€/pax)</label>
+            <input type="number" id="c-otros" min="0" step="0.01" value="0" oninput="calculate()" />
+          </div>
+          <div class="field">
+            <label>Noche extra (€/pax)</label>
+            <input type="number" id="c-noche" min="0" step="0.01" value="0" oninput="calculate()" />
+          </div>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label>Traslado extra (€/pax)</label>
+            <input type="number" id="c-traslado" min="0" step="0.01" value="0" oninput="calculate()" />
+          </div>
+          <div class="field">
+            <label>Cena extra (€/pax)</label>
+            <input type="number" id="c-cena" min="0" step="0.01" value="0" oninput="calculate()" />
+          </div>
+        </div>
+
+        <!-- Actividades / Excursiones -->
+        <div class="field">
+          <label>Actividades / Excursiones opcionales (€/pax)</label>
+          <div class="act-list" id="act-list"></div>
+          <button class="btn-add" onclick="addActividad()">+ Añadir actividad</button>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="row2">
+          <div class="field">
+            <label>Vuelos internacionales (€/pax)</label>
+            <input type="number" id="c-vuelo-int" min="0" step="0.01" value="0" oninput="calculate()" />
+          </div>
+          <div class="field">
+            <label>Vuelos internos (€/pax)</label>
+            <input type="number" id="c-vuelo-interno" min="0" step="0.01" value="0" oninput="calculate()" />
+          </div>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label>Extras varios (€/pax)</label>
+            <input type="number" id="c-extras" min="0" step="0.01" value="0" oninput="calculate()" />
+          </div>
+          <div class="field">
+            <label>Seguro de viaje (€/pax)</label>
+            <input type="number" id="c-seguro" min="0" step="0.01" value="0" oninput="calculate()" />
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- 5. Costes niños (se muestra solo si n-ninos > 0) -->
+    <div class="card" id="card-ninos">
+      <div class="card-head">5 · Costes por Persona — Niños (compartiendo cama)</div>
+      <div class="card-body">
+        <div class="field">
+          <label>Coste Neto Tierra Niño <span class="warn-tag">AUTO · editable</span></label>
+          <div class="tierra-row">
+            <div>
+              <div class="sub-label">USD (del tarifario)</div>
+              <input type="number" id="tierra-nino-usd" min="0" step="0.01"
+                     placeholder="0.00" oninput="calculate()" />
+            </div>
+            <div class="arrow">→</div>
+            <div>
+              <div class="sub-label eur">EUR (convertido)</div>
+              <div class="eur-box" id="tierra-nino-eur">0,00 €</div>
+            </div>
+          </div>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label>Otros servicios tierra niño (€/pax)</label>
+            <input type="number" id="cn-otros" min="0" step="0.01" value="0" oninput="calculate()" />
+          </div>
+          <div class="field">
+            <label>Seguro niño (€/pax)</label>
+            <input type="number" id="cn-seguro" min="0" step="0.01" value="0" oninput="calculate()" />
+          </div>
+        </div>
+        <div class="nota-info">Los vuelos y demás costes del adulto se presupuestan aparte para los niños si aplican.</div>
+      </div>
+    </div>
+
+    <!-- 6. Parámetros -->
+    <div class="card">
+      <div class="card-head">6 · Parámetros de Cotización</div>
+      <div class="card-body">
+        <div class="row2">
+          <div class="field">
+            <label>Tipo de cambio (1 EUR = X USD)</label>
+            <input type="number" id="p-cambio" step="0.001" value="1.15" oninput="calculate()" />
+          </div>
+          <div class="field">
+            <label>Margen de beneficio (%)</label>
+            <input type="number" id="p-margen" step="0.1" value="18" oninput="calculate()" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-calc" onclick="calculate()">Calcular PVP</button>
+
+  </div>
+
+  <!-- ══ COLUMNA RESULTADOS ══ -->
+  <div class="results">
+    <div class="card">
+      <div class="res-head"><h2>Resultado de la Cotización</h2></div>
+      <div class="res-body" id="res-body">
+        <div class="empty">
+          <div class="ico">✈</div>
+          <p>Completa el formulario<br>para ver la cotización.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /layout -->
+
+<script>
+/* ═══════════════════════════════════════════
+   BASE DE DATOS DE CIRCUITOS Y TARIFAS
+   - C1, C2: precios 2025/2026 (Argentina 2026.xlsx)
+   - C3, C4: precios 2024 (actualizar con tarifario vigente)
+   - C5:     precios 2025 (actualizar con tarifario vigente)
+═══════════════════════════════════════════ */
+const CIRCUITOS = [
+  {
+    id: 'C1',
+    nombre: 'Viaje a la Patagonia de Argentina: entre glaciares y tango de 15 días',
+    idOdoo: '261',
+    proveedor: 'Summittravel · Circuito 1 · 13 días de circuito',
+    vuelos_int:      'ESP → EZE → ESP',
+    vuelos_internos: 'AEP → IGR  /  IGR → USH  /  USH → FTE  /  FTE → AEP',
+    nota: 'Julio: suplemento temp. alta en USH y BRC (consultar). No incluye entradas a Parques Nacionales. Vuelos internos desde/hacia Ezeiza: +15 USD/pax.',
+    tarifas: [
+      { de:'2025-10-01', a:'2026-04-05', P_DBL:1268, P_SGL:1948, S_DBL:1596, S_SGL:2616, L_DBL:2298, L_SGL:3998 },
+      { de:'2026-04-06', a:'2026-04-30', P_DBL:1240, P_SGL:1882, S_DBL:1498, S_SGL:2408, L_DBL:2185, L_SGL:3763 },
+      { de:'2026-05-01', a:'2026-06-30', P_DBL:1185, P_SGL:1827, S_DBL:1428, S_SGL:2338, L_DBL:2047, L_SGL:3625 },
+      { de:'2026-07-01', a:'2026-09-30', P_DBL:1240, P_SGL:1882, S_DBL:1498, S_SGL:2408, L_DBL:2185, L_SGL:3763 },
+      { de:'2026-10-01', a:'2026-12-31', P_DBL:1324, P_SGL:2019, S_DBL:1542, S_SGL:2544, L_DBL:2288, L_SGL:3920 },
+    ]
+  },
+  {
+    id: 'C2',
+    nombre: 'Viaje a Buenos Aires, Calafate y Puerto Iguazú en 11 días',
+    idOdoo: '260',
+    proveedor: 'Summittravel · Circuito 2 · 9 días de circuito · Solo presupuestador',
+    vuelos_int:      'ESP → EZE → ESP',
+    vuelos_internos: 'AEP → FTE  /  FTE → IGR  /  IGR → AEP',
+    nota: 'Solo presupuestador. Entradas PN no incluidas: IGR arg. USD 42, IGR bras. USD 28, PN Tierra del Fuego USD 40, PN Los Glaciares USD 43. Vuelos internos desde/hacia Ezeiza: +15 USD/pax.',
+    tarifas: [
+      { de:'2025-10-01', a:'2026-04-05', P_DBL:890,  P_SGL:1330, S_DBL:1214, S_SGL:1894, L_DBL:1690, L_SGL:2730 },
+      { de:'2026-04-06', a:'2026-04-30', P_DBL:878,  P_SGL:1306, S_DBL:1115, S_SGL:1767, L_DBL:1550, L_SGL:2618 },
+      { de:'2026-05-01', a:'2026-06-30', P_DBL:852,  P_SGL:1280, S_DBL:1075, S_SGL:1727, L_DBL:1500, L_SGL:2568 },
+      { de:'2026-07-01', a:'2026-09-30', P_DBL:878,  P_SGL:1280, S_DBL:1115, S_SGL:1727, L_DBL:1550, L_SGL:2568 },
+      { de:'2026-10-01', a:'2026-12-31', P_DBL:920,  P_SGL:1342, S_DBL:1140, S_SGL:1839, L_DBL:1640, L_SGL:2662 },
+    ]
+  },
+  {
+    id: 'C3',
+    nombre: 'Viaje a Buenos Aires y las Cataratas del Iguazú de 8 días',
+    idOdoo: '259',
+    proveedor: 'Summittravel · Circuito 3 · 6 días de circuito',
+    vuelos_int:      'ESP → EZE → ESP',
+    vuelos_internos: 'AEP → IGR  /  IGR → AEP',
+    nota: '⚠ Tarifas 2024 — actualizar con el tarifario vigente. No incluye entradas a Parques Nacionales.',
+    tarifas: [
+      { de:'2024-01-01', a:'2024-04-02', P_DBL:575,  P_SGL:861,  S_DBL:700,  S_SGL:1118, L_DBL:860,  L_SGL:1458 },
+      { de:'2024-04-03', a:'2024-06-30', P_DBL:550,  P_SGL:848,  S_DBL:690,  S_SGL:1132, L_DBL:875,  L_SGL:1463 },
+      { de:'2024-07-01', a:'2024-09-30', P_DBL:618,  P_SGL:936,  S_DBL:755,  S_SGL:1187, L_DBL:958,  L_SGL:1568 },
+      { de:'2024-10-01', a:'2024-12-31', P_DBL:640,  P_SGL:975,  S_DBL:818,  S_SGL:1318, L_DBL:1090, L_SGL:1850 },
+    ]
+  },
+  {
+    id: 'C4',
+    nombre: 'Viaje a Argentina al completo: Buenos Aires, Ushuaia, Calafate e Iguazú de 14 días',
+    idOdoo: '899',
+    proveedor: 'Summittravel · Circuito 4 · 12 días de circuito · Solo presupuestador',
+    vuelos_int:      'ESP → EZE  /  IGR → ESP',
+    vuelos_internos: 'AEP → USH  /  USH → FTE  /  FTE → AEP  /  AEP → IGR',
+    nota: '⚠ Tarifas 2024 — actualizar con el tarifario vigente. Solo presupuestador. No incluye entradas a Parques Nacionales.',
+    tarifas: [
+      { de:'2024-01-01', a:'2024-04-02', P_DBL:1055, P_SGL:1673, S_DBL:1295, S_SGL:2105, L_DBL:1808, L_SGL:3143 },
+      { de:'2024-04-03', a:'2024-06-30', P_DBL:1048, P_SGL:1650, S_DBL:1290, S_SGL:2102, L_DBL:1715, L_SGL:2940 },
+      { de:'2024-07-01', a:'2024-09-30', P_DBL:1085, P_SGL:1703, S_DBL:1328, S_SGL:2152, L_DBL:1785, L_SGL:3019 },
+      { de:'2024-10-01', a:'2024-12-31', P_DBL:1172, P_SGL:1842, S_DBL:1460, S_SGL:2405, L_DBL:2105, L_SGL:3643 },
+    ]
+  },
+  {
+    id: 'C5',
+    nombre: 'Viaje al norte de Argentina: Buenos Aires, Mendoza y Salta en 12 días',
+    idOdoo: '900',
+    proveedor: 'Summittravel · Circuito 5 · 10 días de circuito',
+    vuelos_int:      'ESP → EZE → ESP',
+    vuelos_internos: 'AEP → MDZ  /  MDZ → SLA  /  SLA → AEP',
+    nota: '⚠ Tarifas 2025 — actualizar con el tarifario vigente. No incluye entradas a Parques Nacionales.',
+    tarifas: [
+      { de:'2025-01-01', a:'2025-02-28', P_DBL:905,  P_SGL:1330, S_DBL:1060, S_SGL:1652, L_DBL:1330, L_SGL:2210 },
+      { de:'2025-03-01', a:'2025-09-30', P_DBL:910,  P_SGL:1318, S_DBL:1185, S_SGL:1865, L_DBL:1460, L_SGL:2404 },
+      { de:'2025-10-01', a:'2025-12-31', P_DBL:955,  P_SGL:1405, S_DBL:1225, S_SGL:1940, L_DBL:1490, L_SGL:2454 },
+    ]
+  },
+  {
+    id: 'MEDIDA',
+    nombre: 'Viaje a medida',
+    idOdoo: null,
+    proveedor: 'A medida — introduce todos los costes manualmente',
+    vuelos_int:      '',
+    vuelos_internos: '',
+    nota: '',
+    tarifas: []
+  }
+];
+
+/* ═══════════════════════════════════════════
+   ESTADO
+═══════════════════════════════════════════ */
+let circuito = null;
+let actId = 0;
+
+/* ═══════════════════════════════════════════
+   INICIALIZACIÓN
+═══════════════════════════════════════════ */
+(function init() {
+  const sel = document.getElementById('sel-circ');
+  CIRCUITOS.forEach(c => {
+    const o = document.createElement('option');
+    o.value = c.id;
+    o.textContent = c.nombre;
+    sel.appendChild(o);
+  });
+
+  const hoy = new Date();
+  document.getElementById('f-llegada').value = toISO(hoy);
+  const salida = new Date(hoy);
+  salida.setDate(salida.getDate() + 8);
+  document.getElementById('f-salida').value = toISO(salida);
+})();
+
+/* ═══════════════════════════════════════════
+   HANDLERS
+═══════════════════════════════════════════ */
+function onCircuitChange() {
+  const id = document.getElementById('sel-circ').value;
+  circuito = CIRCUITOS.find(c => c.id === id) || null;
+
+  const box = document.getElementById('info-circ');
+  if (!circuito) { box.style.display = 'none'; return; }
+
+  box.style.display = 'block';
+  document.getElementById('ic-vuelos-int').textContent      = circuito.vuelos_int      ? '✈  ' + circuito.vuelos_int      : '';
+  document.getElementById('ic-vuelos-internos').textContent = circuito.vuelos_internos ? '✈  ' + circuito.vuelos_internos : '';
+  document.getElementById('ic-meta').textContent            = circuito.proveedor;
+
+  const notaEl = document.getElementById('ic-nota');
+  if (circuito.nota) { notaEl.textContent = circuito.nota; notaEl.style.display = 'block'; }
+  else               { notaEl.style.display = 'none'; }
+
+  onDateChange();
+}
+
+function onConfigChange() { onDateChange(); }
+
+function onPaxChange() {
+  const ninos = parseInt(document.getElementById('n-ninos').value) || 0;
+  document.getElementById('card-ninos').style.display = ninos > 0 ? 'block' : 'none';
+}
+
+function onDateChange() {
+  const llegada = document.getElementById('f-llegada').value;
+  const salida  = document.getElementById('f-salida').value;
+  const el      = document.getElementById('fecha-info');
+
+  if (!llegada) { el.innerHTML = ''; return; }
+
+  const dLlegada = parseDate(llegada);
+  let html = '';
+
+  if (salida) {
+    const dSalida = parseDate(salida);
+    const noches  = Math.round((dSalida - dLlegada) / 86400000);
+    if (noches > 0) html += `<span style="font-size:.78rem; color:var(--subtexto);">${noches} noche${noches !== 1 ? 's' : ''} en destino</span>`;
+  }
+
+  if (circuito && circuito.id !== 'MEDIDA') {
+    const tarifa = lookupTarifa(circuito, dLlegada);
+    if (tarifa) {
+      const key = buildKey();
+      document.getElementById('tierra-usd').value = tarifa[key] ?? '';
+      const temp = fmtTemp(tarifa);
+      html += ` <span class="badge-temp t-ok">✓ Temporada: ${temp}</span>`;
+    } else {
+      document.getElementById('tierra-usd').value = '';
+      html += ` <span class="badge-temp t-err">⚠ Fecha fuera del tarifario — introduce el precio manualmente</span>`;
+    }
+  }
+
+  el.innerHTML = html;
+  calculate();
+}
+
+/* ═══════════════════════════════════════════
+   LOOKUP DE TARIFA
+═══════════════════════════════════════════ */
+function lookupTarifa(circ, fecha) {
+  for (const t of circ.tarifas) {
+    if (fecha >= parseDate(t.de) && fecha <= parseDate(t.a + 'T23:59:59')) return t;
+  }
+  return null;
+}
+
+function buildKey() {
+  const cat = document.getElementById('sel-cat').value;   // P | S | L
+  const hab = document.getElementById('sel-hab').value;   // DBL | SGL
+  return `${cat}_${hab}`;
+}
+
+function fmtTemp(t) {
+  const m = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  const d = parseDate(t.de), a = parseDate(t.a);
+  return `${m[d.getMonth()]} ${d.getFullYear()} – ${m[a.getMonth()]} ${a.getFullYear()}`;
+}
+
+/* ═══════════════════════════════════════════
+   ACTIVIDADES DINÁMICAS
+═══════════════════════════════════════════ */
+function addActividad() {
+  actId++;
+  const list = document.getElementById('act-list');
+  const div  = document.createElement('div');
+  div.className = 'act-item';
+  div.id        = `act-${actId}`;
+  div.innerHTML = `
+    <input type="text"   placeholder="Nombre de la actividad / excursión" />
+    <input type="number" min="0" step="0.01" value="0" placeholder="€/pax"
+           oninput="calculate()" />
+    <button class="btn-rm" onclick="rmAct('act-${actId}')" title="Eliminar">✕</button>`;
+  list.appendChild(div);
+}
+
+function rmAct(id) {
+  document.getElementById(id)?.remove();
+  calculate();
+}
+
+function totalActividades() {
+  let t = 0;
+  document.querySelectorAll('.act-item input[type="number"]').forEach(i => {
+    t += parseFloat(i.value) || 0;
+  });
+  return t;
+}
+
+/* ═══════════════════════════════════════════
+   CÁLCULO PRINCIPAL
+   PVP = suma_costes / (1 - margen)
+═══════════════════════════════════════════ */
+function calculate() {
+  const cambio  = parseFloat(document.getElementById('p-cambio').value) || 1.15;
+  const margenP = parseFloat(document.getElementById('p-margen').value) || 18;
+  const divisor = 1 - (margenP / 100);
+
+  // ── Adultos ──
+  const tierra_usd = parseFloat(document.getElementById('tierra-usd').value) || 0;
+  const tierra_eur = tierra_usd / cambio;
+  document.getElementById('tierra-eur').textContent = fmtE(tierra_eur);
+
+  const otros     = parseFloat(document.getElementById('c-otros').value)       || 0;
+  const noche     = parseFloat(document.getElementById('c-noche').value)        || 0;
+  const traslado  = parseFloat(document.getElementById('c-traslado').value)     || 0;
+  const cena      = parseFloat(document.getElementById('c-cena').value)         || 0;
+  const activs    = totalActividades();
+  const vInt      = parseFloat(document.getElementById('c-vuelo-int').value)    || 0;
+  const vInterno  = parseFloat(document.getElementById('c-vuelo-interno').value)|| 0;
+  const extras    = parseFloat(document.getElementById('c-extras').value)       || 0;
+  const seguro    = parseFloat(document.getElementById('c-seguro').value)       || 0;
+
+  const coste_a   = tierra_eur + otros + noche + traslado + cena + activs + vInt + vInterno + extras + seguro;
+  const pvp_a     = divisor > 0 ? coste_a / divisor : 0;
+  const nA        = Math.max(0, parseInt(document.getElementById('n-adultos').value) || 0);
+  const total_a   = pvp_a * nA;
+
+  // ── Niños ──
+  const nN = Math.max(0, parseInt(document.getElementById('n-ninos').value) || 0);
+  let tierra_nino_eur = 0, coste_n = 0, pvp_n = 0, total_n = 0;
+  if (nN > 0) {
+    const tierra_nino_usd = parseFloat(document.getElementById('tierra-nino-usd').value) || 0;
+    tierra_nino_eur = tierra_nino_usd / cambio;
+    document.getElementById('tierra-nino-eur').textContent = fmtE(tierra_nino_eur);
+    const cn_otros  = parseFloat(document.getElementById('cn-otros').value)  || 0;
+    const cn_seguro = parseFloat(document.getElementById('cn-seguro').value) || 0;
+    coste_n = tierra_nino_eur + cn_otros + cn_seguro;
+    pvp_n   = divisor > 0 ? coste_n / divisor : 0;
+    total_n = pvp_n * nN;
+  }
+
+  const pvp_total = total_a + total_n;
+
+  renderResults({
+    tierra_eur, otros, noche, traslado, cena, activs,
+    vInt, vInterno, extras, seguro, coste_a, pvp_a, nA, total_a,
+    coste_n, pvp_n, nN, total_n,
+    pvp_total, margenP, divisor
+  });
+}
+
+/* ═══════════════════════════════════════════
+   RENDERIZADO DE RESULTADOS
+═══════════════════════════════════════════ */
+function renderResults(d) {
+  const el = document.getElementById('res-body');
+
+  if (d.pvp_total === 0 && d.tierra_eur === 0) {
+    el.innerHTML = `<div class="empty"><div class="ico">✈</div>
+      <p>Completa el formulario<br>para ver la cotización.</p></div>`;
+    return;
+  }
+
+  const costes = [
+    { l: 'Tierra neto',                v: d.tierra_eur,  show: true },
+    { l: 'Otros servicios tierra',     v: d.otros,       show: d.otros     > 0 },
+    { l: 'Noche extra',                v: d.noche,       show: d.noche     > 0 },
+    { l: 'Traslado extra',             v: d.traslado,    show: d.traslado  > 0 },
+    { l: 'Cena extra',                 v: d.cena,        show: d.cena      > 0 },
+    { l: 'Actividades / Excursiones',  v: d.activs,      show: d.activs    > 0 },
+    { l: 'Vuelos internacionales',     v: d.vInt,        show: d.vInt      > 0 },
+    { l: 'Vuelos internos',            v: d.vInterno,    show: d.vInterno  > 0 },
+    { l: 'Extras varios',              v: d.extras,      show: d.extras    > 0 },
+    { l: 'Seguro de viaje',            v: d.seguro,      show: d.seguro    > 0 },
+  ];
+
+  let html = `<div class="sec-label">Costes por persona — adulto</div>`;
+  costes.filter(r => r.show).forEach(r => {
+    html += `<div class="bl-item"><span class="lbl">${r.l}</span><span class="val">${fmt(r.v)}</span></div>`;
+  });
+  html += `<div class="bl-sub">
+    <span class="lbl">Coste total / pax adulto</span>
+    <span class="val">${fmt(d.coste_a)}</span>
+  </div>`;
+  html += `<div class="bl-sub verde">
+    <span class="lbl">PVP / pax adulto</span>
+    <span class="val">${fmt(d.pvp_a)}</span>
+  </div>`;
+
+  if (d.nN > 0) {
+    html += `<div class="sep"></div>`;
+    html += `<div class="sec-label">Costes por persona — niño</div>`;
+    html += `<div class="bl-item"><span class="lbl">Coste total / pax niño</span><span class="val">${fmt(d.coste_n)}</span></div>`;
+    html += `<div class="bl-sub verde">
+      <span class="lbl">PVP / pax niño</span>
+      <span class="val">${fmt(d.pvp_n)}</span>
+    </div>`;
+  }
+
+  html += `<div class="total-block">
+    <div class="tl">PVP Total del Grupo</div>
+    <div class="ta">${fmt(d.pvp_total)}</div>
+    <div class="ts">${d.nA} adulto${d.nA !== 1 ? 's' : ''}${d.nN > 0 ? ` + ${d.nN} niño${d.nN !== 1 ? 's' : ''}` : ''} · Margen ${d.margenP}%</div>
+  </div>`;
+
+  if (d.nA > 0 && d.nN > 0) {
+    html += `<div class="sep"></div>`;
+    html += `<div class="sec-label">Desglose del grupo</div>`;
+    html += `<div class="bl-item"><span class="lbl">Total adultos (${d.nA} × ${fmt(d.pvp_a)})</span><span class="val">${fmt(d.total_a)}</span></div>`;
+    html += `<div class="bl-item"><span class="lbl">Total niños (${d.nN} × ${fmt(d.pvp_n)})</span><span class="val">${fmt(d.total_n)}</span></div>`;
+  }
+
+  el.innerHTML = html;
+}
+
+/* ═══════════════════════════════════════════
+   UTILIDADES
+═══════════════════════════════════════════ */
+function fmt(n) {
+  return (n || 0).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+}
+function fmtE(n) {
+  return (n || 0).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+}
+function toISO(d) {
+  return d.toISOString().split('T')[0];
+}
+function parseDate(s) {
+  return new Date(s.length === 10 ? s + 'T00:00:00' : s);
+}
+</script>
+</body>
+</html>
