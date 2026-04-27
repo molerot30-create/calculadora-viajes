@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GrandVoyage · Admin Tarifarios</title>
+  <style>
+    :root {
+      --azul:       #1a3a5c;
+      --azul-med:   #2563a8;
+      --azul-claro: #e8f0fb;
+      --dorado:     #c9a227;
+      --gris-borde: #d1d5db;
+      --gris-fondo: #f3f4f6;
+      --verde-bg:   #dcfce7;
+      --verde-txt:  #166534;
+      --rojo:       #dc2626;
+      --texto:      #111827;
+      --subtexto:   #6b7280;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #eef2f7; color: var(--texto); min-height: 100vh; }
+
+    /* ── Header ── */
+    header {
+      background: var(--azul); color: #fff;
+      padding: .85rem 1.5rem;
+      display: flex; align-items: center; gap: .75rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,.25);
+      flex-wrap: wrap;
+    }
+    .brand { font-size: 1.3rem; font-weight: 800; letter-spacing: .05em; }
+    .sub   { font-size: .78rem; opacity: .7; margin-top: .08rem; }
+    .badge-admin {
+      background: var(--dorado); font-size: .65rem; font-weight: 700;
+      padding: .18rem .6rem; border-radius: 20px;
+      text-transform: uppercase; letter-spacing: .08em;
+    }
+    .header-actions { margin-left: auto; display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+
+    .btn-save   { background: var(--dorado); color: #fff; border: none; border-radius: 7px; padding: .5rem 1.2rem; font-weight: 700; font-size: .82rem; cursor: pointer; transition: background .15s; }
+    .btn-save:hover { background: #b8901f; }
+    .btn-sec    { background: rgba(255,255,255,.12); color: #fff; border: 1.5px solid rgba(255,255,255,.35); border-radius: 7px; padding: .45rem .9rem; font-size: .78rem; font-weight: 600; cursor: pointer; transition: background .15s; }
+    .btn-sec:hover { background: rgba(255,255,255,.22); }
+    .btn-danger { background: rgba(220,38,38,.85); color: #fff; border: none; border-radius: 7px; padding: .45rem .85rem; font-size: .78rem; font-weight: 600; cursor: pointer; transition: background .15s; }
+    .btn-danger:hover { background: #b91c1c; }
+    .link-booking { font-size: .78rem; color: rgba(255,255,255,.65); text-decoration: none; padding: .45rem .5rem; }
+    .link-booking:hover { color: #fff; }
+
+    .status-ok  { font-size: .76rem; background: #dcfce7; color: #166534; padding: .28rem .7rem; border-radius: 20px; font-weight: 700; }
+    .status-err { font-size: .76rem; background: #fee2e2; color: #991b1b; padding: .28rem .7rem; border-radius: 20px; font-weight: 700; }
+
+    /* ── Container ── */
+    .container { max-width: 1140px; margin: 1.25rem auto; padding: 0 1rem; }
+
+    .page-note {
+      background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 8px;
+      padding: .65rem 1rem; font-size: .8rem; color: #92400e;
+      margin-bottom: 1rem;
+    }
+    .page-note strong { display: block; margin-bottom: .2rem; }
+
+    /* ── Cards ── */
+    .card { background: #fff; border-radius: 12px; box-shadow: 0 1px 6px rgba(0,0,0,.07); margin-bottom: 1rem; overflow: hidden; }
+
+    .card-head {
+      background: var(--azul); color: #fff;
+      padding: .7rem 1.1rem;
+      display: flex; align-items: center; gap: .65rem;
+      cursor: pointer; user-select: none;
+    }
+    .card-head:hover { background: #1e4570; }
+    .cid    { font-size: .7rem; background: rgba(255,255,255,.2); border-radius: 4px; padding: .15rem .5rem; font-weight: 700; white-space: nowrap; }
+    .cnombre { font-size: .88rem; font-weight: 600; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .toggle { font-size: .7rem; opacity: .7; margin-left: .25rem; }
+    .btn-del-circ {
+      background: rgba(220,38,38,.25); color: #fca5a5; border: none; border-radius: 5px;
+      font-size: .72rem; font-weight: 700; padding: .22rem .6rem; cursor: pointer;
+      transition: background .15s;
+    }
+    .btn-del-circ:hover { background: rgba(220,38,38,.5); color: #fff; }
+
+    .card-body { padding: 1.1rem; }
+
+    /* ── Form ── */
+    .section-title {
+      font-size: .67rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .07em; color: var(--subtexto);
+      padding-bottom: .3rem; border-bottom: 1px solid var(--gris-borde);
+      margin-bottom: .65rem;
+    }
+    .section-title:not(:first-child) { margin-top: 1rem; }
+
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+    .span2 { grid-column: 1 / -1; }
+
+    .f-label { display: block; font-size: .67rem; font-weight: 700; color: #374151; text-transform: uppercase; letter-spacing: .04em; margin-bottom: .18rem; }
+
+    input[type="text"], input[type="number"], input[type="date"], textarea {
+      width: 100%; padding: .45rem .7rem;
+      border: 1.5px solid var(--gris-borde); border-radius: 6px;
+      font-size: .85rem; color: var(--texto); background: var(--gris-fondo);
+      transition: border-color .15s, background .15s;
+      font-family: inherit;
+    }
+    textarea { resize: vertical; min-height: 58px; }
+    input:focus, textarea:focus { outline: none; border-color: var(--azul-med); background: #fff; }
+
+    /* ── Tariff table ── */
+    .tariff-wrap { overflow-x: auto; margin-top: .4rem; border: 1.5px solid var(--gris-borde); border-radius: 8px; }
+    table { width: 100%; border-collapse: collapse; min-width: 720px; }
+
+    thead th {
+      font-size: .65rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .05em; padding: .38rem .5rem; text-align: center;
+      border-bottom: 1px solid var(--gris-borde);
+    }
+    thead tr:first-child th { border-bottom: none; }
+    thead tr:last-child th { border-bottom: 1.5px solid var(--gris-borde); }
+
+    .th-range { background: #f0f4f8; color: var(--subtexto); }
+    .th-p     { background: #dbeafe; color: #1d4ed8; }
+    .th-s     { background: #ede9fe; color: #6d28d9; }
+    .th-l     { background: #fef9c3; color: #92400e; }
+    .th-act   { background: #f0f4f8; }
+
+    tbody td { padding: .28rem .3rem; border-bottom: 1px solid var(--gris-borde); vertical-align: middle; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: #f9fafb; }
+
+    td input[type="date"],
+    td input[type="number"] {
+      padding: .3rem .4rem; font-size: .82rem;
+      border: 1.5px solid transparent; background: transparent; border-radius: 4px;
+      transition: border-color .12s, background .12s;
+    }
+    td input:focus { border-color: var(--azul-med); background: #fff; }
+    td input[type="number"] { text-align: right; }
+    td input[type="date"]   { min-width: 115px; }
+    td input[type="number"] { min-width: 75px; }
+
+    .btn-rm-row {
+      background: none; border: none; cursor: pointer;
+      color: #f87171; font-size: .95rem; padding: .1rem .35rem; line-height: 1;
+    }
+    .btn-rm-row:hover { color: var(--rojo); }
+
+    .btn-add-period {
+      display: inline-flex; align-items: center; gap: .3rem;
+      border: 1.5px dashed var(--azul-med); background: none; color: var(--azul-med);
+      font-size: .76rem; font-weight: 700;
+      padding: .38rem .8rem; border-radius: 6px; cursor: pointer;
+      margin-top: .6rem; transition: background .15s;
+    }
+    .btn-add-period:hover { background: var(--azul-claro); }
+
+    /* ── Add circuit ── */
+    .btn-add-circ {
+      display: flex; align-items: center; justify-content: center; gap: .4rem;
+      width: 100%; padding: .85rem;
+      border: 2px dashed #93c5fd; background: rgba(219,234,254,.3); color: var(--azul-med);
+      border-radius: 12px; font-size: .88rem; font-weight: 700; cursor: pointer;
+      transition: background .15s; margin-bottom: 1.5rem;
+    }
+    .btn-add-circ:hover { background: rgba(219,234,254,.6); }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="brand">GrandVoyage</div>
+    <div class="sub">Gestión de Tarifarios · Equipo Producto</div>
+  </div>
+  <div class="badge-admin">Admin</div>
+  <a href="index.html" class="link-booking">← Ir a Booking</a>
+  <div class="header-actions">
+    <span id="status-msg" style="display:none"></span>
+    <button class="btn-save" onclick="saveData()">Guardar cambios</button>
+    <button class="btn-sec" onclick="exportJSON()">Exportar JSON</button>
+    <label class="btn-sec" style="cursor:pointer">Importar JSON
+      <input type="file" accept=".json" onchange="importJSON(event)" style="display:none">
+    </label>
+    <button class="btn-danger" onclick="resetDefaults()">Restaurar defaults</button>
+  </div>
+</header>
+
+<div class="container">
+  <div class="page-note">
+    <strong>¿Cómo funciona?</strong>
+    Edita los tarifarios de tierra aquí y pulsa <em>Guardar cambios</em>. Los precios se actualizarán automáticamente en la herramienta de Booking (en este mismo navegador). Para compartir los datos con otros equipos, usa <em>Exportar JSON</em> y pásalo a quien necesite importarlo.
+  </div>
+
+  <div id="circuits-container"></div>
+
+  <button class="btn-add-circ" onclick="addCircuito()">+ Añadir nuevo circuito</button>
+</div>
+
+<script>
+/* ═══════════════════════════════════════
+   DATOS DEFAULT
+═══════════════════════════════════════ */
+const CIRCUITOS_DEFAULT = [
+  {
+    id: 'C1',
+    nombre: 'Viaje a la Patagonia de Argentina: entre glaciares y tango de 15 días',
+    idOdoo: '261',
+    proveedor: 'Summittravel · Circuito 1 · 13 días de circuito',
+    vuelos_int:      'ESP → EZE → ESP',
+    vuelos_internos: 'AEP → IGR  /  IGR → USH  /  USH → FTE  /  FTE → AEP',
+    nota: 'Julio: suplemento temp. alta en USH y BRC (consultar). No incluye entradas a Parques Nacionales. Vuelos internos desde/hacia Ezeiza: +15 USD/pax.',
+    tarifas: [
+      { de:'2025-10-01', a:'2026-04-05', P_DBL:1268, P_SGL:1948, S_DBL:1596, S_SGL:2616, L_DBL:2298, L_SGL:3998 },
+      { de:'2026-04-06', a:'2026-04-30', P_DBL:1240, P_SGL:1882, S_DBL:1498, S_SGL:2408, L_DBL:2185, L_SGL:3763 },
+      { de:'2026-05-01', a:'2026-06-30', P_DBL:1185, P_SGL:1827, S_DBL:1428, S_SGL:2338, L_DBL:2047, L_SGL:3625 },
+      { de:'2026-07-01', a:'2026-09-30', P_DBL:1240, P_SGL:1882, S_DBL:1498, S_SGL:2408, L_DBL:2185, L_SGL:3763 },
+      { de:'2026-10-01', a:'2026-12-31', P_DBL:1324, P_SGL:2019, S_DBL:1542, S_SGL:2544, L_DBL:2288, L_SGL:3920 },
+    ]
+  },
+  {
+    id: 'C2',
+    nombre: 'Viaje a Buenos Aires, Calafate y Puerto Iguazú en 11 días',
+    idOdoo: '260',
+    proveedor: 'Summittravel · Circuito 2 · 9 días de circuito · Solo presupuestador',
+    vuelos_int:      'ESP → EZE → ESP',
+    vuelos_internos: 'AEP → FTE  /  FTE → IGR  /  IGR → AEP',
+    nota: 'Solo presupuestador. Entradas PN no incluidas: IGR arg. USD 42, IGR bras. USD 28, PN Tierra del Fuego USD 40, PN Los Glaciares USD 43. Vuelos internos desde/hacia Ezeiza: +15 USD/pax.',
+    tarifas: [
+      { de:'2025-10-01', a:'2026-04-05', P_DBL:890,  P_SGL:1330, S_DBL:1214, S_SGL:1894, L_DBL:1690, L_SGL:2730 },
+      { de:'2026-04-06', a:'2026-04-30', P_DBL:878,  P_SGL:1306, S_DBL:1115, S_SGL:1767, L_DBL:1550, L_SGL:2618 },
+      { de:'2026-05-01', a:'2026-06-30', P_DBL:852,  P_SGL:1280, S_DBL:1075, S_SGL:1727, L_DBL:1500, L_SGL:2568 },
+      { de:'2026-07-01', a:'2026-09-30', P_DBL:878,  P_SGL:1280, S_DBL:1115, S_SGL:1727, L_DBL:1550, L_SGL:2568 },
+      { de:'2026-10-01', a:'2026-12-31', P_DBL:920,  P_SGL:1342, S_DBL:1140, S_SGL:1839, L_DBL:1640, L_SGL:2662 },
+    ]
+  },
+  {
+    id: 'C3',
+    nombre: 'Viaje a Buenos Aires y las Cataratas del Iguazú de 8 días',
+    idOdoo: '259',
+    proveedor: 'Summittravel · Circuito 3 · 6 días de circuito',
+    vuelos_int:      'ESP → EZE → ESP',
+    vuelos_internos: 'AEP → IGR  /  IGR → AEP',
+    nota: '⚠ Tarifas 2024 — actualizar con el tarifario vigente. No incluye entradas a Parques Nacionales.',
+    tarifas: [
+      { de:'2024-01-01', a:'2024-04-02', P_DBL:575,  P_SGL:861,  S_DBL:700,  S_SGL:1118, L_DBL:860,  L_SGL:1458 },
+      { de:'2024-04-03', a:'2024-06-30', P_DBL:550,  P_SGL:848,  S_DBL:690,  S_SGL:1132, L_DBL:875,  L_SGL:1463 },
+      { de:'2024-07-01', a:'2024-09-30', P_DBL:618,  P_SGL:936,  S_DBL:755,  S_SGL:1187, L_DBL:958,  L_SGL:1568 },
+      { de:'2024-10-01', a:'2024-12-31', P_DBL:640,  P_SGL:975,  S_DBL:818,  S_SGL:1318, L_DBL:1090, L_SGL:1850 },
+    ]
+  },
+  {
+    id: 'C4',
+    nombre: 'Viaje a Argentina al completo: Buenos Aires, Ushuaia, Calafate e Iguazú de 14 días',
+    idOdoo: '899',
+    proveedor: 'Summittravel · Circuito 4 · 12 días de circuito · Solo presupuestador',
+    vuelos_int:      'ESP → EZE  /  IGR → ESP',
+    vuelos_internos: 'AEP → USH  /  USH → FTE  /  FTE → AEP  /  AEP → IGR',
+    nota: '⚠ Tarifas 2024 — actualizar con el tarifario vigente. Solo presupuestador. No incluye entradas a Parques Nacionales.',
+    tarifas: [
+      { de:'2024-01-01', a:'2024-04-02', P_DBL:1055, P_SGL:1673, S_DBL:1295, S_SGL:2105, L_DBL:1808, L_SGL:3143 },
+      { de:'2024-04-03', a:'2024-06-30', P_DBL:1048, P_SGL:1650, S_DBL:1290, S_SGL:2102, L_DBL:1715, L_SGL:2940 },
+      { de:'2024-07-01', a:'2024-09-30', P_DBL:1085, P_SGL:1703, S_DBL:1328, S_SGL:2152, L_DBL:1785, L_SGL:3019 },
+      { de:'2024-10-01', a:'2024-12-31', P_DBL:1172, P_SGL:1842, S_DBL:1460, S_SGL:2405, L_DBL:2105, L_SGL:3643 },
+    ]
+  },
+  {
+    id: 'C5',
+    nombre: 'Viaje al norte de Argentina: Buenos Aires, Mendoza y Salta en 12 días',
+    idOdoo: '900',
+    proveedor: 'Summittravel · Circuito 5 · 10 días de circuito',
+    vuelos_int:      'ESP → EZE → ESP',
+    vuelos_internos: 'AEP → MDZ  /  MDZ → SLA  /  SLA → AEP',
+    nota: '⚠ Tarifas 2025 — actualizar con el tarifario vigente. No incluye entradas a Parques Nacionales.',
+    tarifas: [
+      { de:'2025-01-01', a:'2025-02-28', P_DBL:905,  P_SGL:1330, S_DBL:1060, S_SGL:1652, L_DBL:1330, L_SGL:2210 },
+      { de:'2025-03-01', a:'2025-09-30', P_DBL:910,  P_SGL:1318, S_DBL:1185, S_SGL:1865, L_DBL:1460, L_SGL:2404 },
+      { de:'2025-10-01', a:'2025-12-31', P_DBL:955,  P_SGL:1405, S_DBL:1225, S_SGL:1940, L_DBL:1490, L_SGL:2454 },
+    ]
+  }
+];
+
+/* ═══════════════════════════════════════
+   ESTADO
+═══════════════════════════════════════ */
+let circuitos = [];
+
+function loadData() {
+  const saved = localStorage.getItem('gv_circuitos');
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        circuitos = parsed.filter(c => c.id !== 'MEDIDA');
+        return;
+      }
+    } catch(e) {}
+  }
+  circuitos = JSON.parse(JSON.stringify(CIRCUITOS_DEFAULT));
+}
+
+/* ═══════════════════════════════════════
+   RECOLECTAR DATOS DEL DOM
+═══════════════════════════════════════ */
+function collectData() {
+  return Array.from(document.querySelectorAll('.circ-card')).map(card => ({
+    id:              card.dataset.id,
+    nombre:          card.querySelector('[data-f="nombre"]').value.trim(),
+    idOdoo:          card.querySelector('[data-f="idOdoo"]').value.trim() || null,
+    nombre_circuito: card.querySelector('[data-f="nombre_circuito"]').value.trim(),
+    min_pax:         parseInt(card.querySelector('[data-f="min_pax"]').value) || 0,
+    noches:          parseInt(card.querySelector('[data-f="noches"]').value) || 0,
+    proveedor:       card.querySelector('[data-f="proveedor"]').value.trim(),
+    vuelos_int:      card.querySelector('[data-f="vuelos_int"]').value.trim(),
+    vuelos_internos: card.querySelector('[data-f="vuelos_internos"]').value.trim(),
+    nota:            card.querySelector('[data-f="nota"]').value.trim(),
+    tarifas: Array.from(card.querySelectorAll('.tarifa-row')).map(row => ({
+      de:    row.querySelector('[data-f="de"]').value,
+      a:     row.querySelector('[data-f="a"]').value,
+      P_DBL: parseFloat(row.querySelector('[data-f="P_DBL"]').value) || 0,
+      P_SGL: parseFloat(row.querySelector('[data-f="P_SGL"]').value) || 0,
+      S_DBL: parseFloat(row.querySelector('[data-f="S_DBL"]').value) || 0,
+      S_SGL: parseFloat(row.querySelector('[data-f="S_SGL"]').value) || 0,
+      L_DBL: parseFloat(row.querySelector('[data-f="L_DBL"]').value) || 0,
+      L_SGL: parseFloat(row.querySelector('[data-f="L_SGL"]').value) || 0,
+    }))
+  }));
+}
+
+/* ═══════════════════════════════════════
+   GUARDAR
+═══════════════════════════════════════ */
+function saveData() {
+  const data = collectData();
+  const medida = {
+    id: 'MEDIDA', nombre: 'Viaje a medida', idOdoo: null,
+    proveedor: 'A medida — introduce todos los costes manualmente',
+    vuelos_int: '', vuelos_internos: '', nota: '', tarifas: []
+  };
+  localStorage.setItem('gv_circuitos', JSON.stringify([...data, medida]));
+  circuitos = data;
+  showStatus('✓ Guardado correctamente', 'ok');
+  refreshCardHeaders();
+}
+
+function refreshCardHeaders() {
+  document.querySelectorAll('.circ-card').forEach(card => {
+    const nombre = card.querySelector('[data-f="nombre"]').value.trim();
+    card.querySelector('.cnombre').textContent = nombre;
+  });
+}
+
+/* ═══════════════════════════════════════
+   EXPORTAR / IMPORTAR
+═══════════════════════════════════════ */
+function exportJSON() {
+  const data = collectData();
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `tarifarios-gv-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+}
+
+function importJSON(evt) {
+  const file = evt.target.files[0];
+  if (!file) return;
+  evt.target.value = '';
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!Array.isArray(data)) throw new Error('formato inválido');
+      circuitos = data.filter(c => c.id !== 'MEDIDA');
+      renderAll();
+      showStatus('✓ Importado. Pulsa Guardar para confirmar.', 'ok');
+    } catch(err) {
+      showStatus('✗ Error al leer el JSON: ' + err.message, 'err');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function resetDefaults() {
+  if (!confirm('¿Restaurar todos los tarifarios a los valores por defecto? Se perderán todos los cambios guardados.')) return;
+  localStorage.removeItem('gv_circuitos');
+  circuitos = JSON.parse(JSON.stringify(CIRCUITOS_DEFAULT));
+  renderAll();
+  showStatus('✓ Restaurado a valores por defecto', 'ok');
+}
+
+/* ═══════════════════════════════════════
+   STATUS
+═══════════════════════════════════════ */
+let statusTimer = null;
+function showStatus(msg, type) {
+  const el = document.getElementById('status-msg');
+  el.textContent = msg;
+  el.className = type === 'ok' ? 'status-ok' : 'status-err';
+  el.style.display = 'inline-block';
+  clearTimeout(statusTimer);
+  statusTimer = setTimeout(() => { el.style.display = 'none'; }, 3500);
+}
+
+/* ═══════════════════════════════════════
+   RENDER
+═══════════════════════════════════════ */
+function esc(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function tarifaRowHTML(t) {
+  const fields = ['P_DBL','P_SGL','S_DBL','S_SGL','L_DBL','L_SGL'];
+  return `<tr class="tarifa-row">
+    <td><input type="date" data-f="de" value="${esc(t.de)}"></td>
+    <td><input type="date" data-f="a"  value="${esc(t.a)}"></td>
+    ${fields.map(f => `<td><input type="number" data-f="${f}" value="${t[f] ?? 0}" min="0" step="1"></td>`).join('')}
+    <td style="text-align:center;"><button class="btn-rm-row" onclick="removeRow(this)" title="Eliminar periodo">✕</button></td>
+  </tr>`;
+}
+
+function circuitCardHTML(c) {
+  const rows = c.tarifas.map(t => tarifaRowHTML(t)).join('');
+  return `
+  <div class="card circ-card" data-id="${esc(c.id)}">
+    <div class="card-head" onclick="toggleCard(this)">
+      <span class="cid">${esc(c.id)}</span>
+      <span class="cnombre">${esc(c.nombre)}</span>
+      <button class="btn-del-circ" onclick="deleteCircuito(event, this)" title="Eliminar circuito">✕ Eliminar</button>
+      <span class="toggle">▼</span>
+    </div>
+    <div class="card-body">
+      <div class="section-title">Información del circuito</div>
+      <div class="grid2">
+        <div class="span2">
+          <label class="f-label">Nombre comercial (Booking)</label>
+          <input type="text" data-f="nombre" value="${esc(c.nombre)}" oninput="syncHeader(this)">
+        </div>
+        <div>
+          <label class="f-label">Nombre proveedor</label>
+          <input type="text" data-f="proveedor" value="${esc(c.proveedor)}">
+        </div>
+        <div>
+          <label class="f-label">ID Odoo</label>
+          <input type="text" data-f="idOdoo" value="${esc(c.idOdoo || '')}">
+        </div>
+        <div>
+          <label class="f-label">Nombre Circuito</label>
+          <input type="text" data-f="nombre_circuito" value="${esc(c.nombre_circuito || '')}">
+        </div>
+        <div>
+          <label class="f-label">Mínimo de Pasajeros</label>
+          <input type="number" data-f="min_pax" value="${c.min_pax || ''}" min="0" step="1" placeholder="0">
+        </div>
+        <div>
+          <label class="f-label">Noches en destino</label>
+          <input type="number" data-f="noches" value="${c.noches || ''}" min="0" step="1" placeholder="0">
+        </div>
+        <div>
+          <label class="f-label">Vuelos internacionales</label>
+          <input type="text" data-f="vuelos_int" value="${esc(c.vuelos_int)}">
+        </div>
+        <div>
+          <label class="f-label">Vuelos internos</label>
+          <input type="text" data-f="vuelos_internos" value="${esc(c.vuelos_internos)}">
+        </div>
+        <div class="span2">
+          <label class="f-label">Nota / Observaciones</label>
+          <textarea data-f="nota">${esc(c.nota)}</textarea>
+        </div>
+      </div>
+
+      <div class="section-title">Tarifas de tierra (USD / pax)</div>
+      <div class="tariff-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="th-range" colspan="2">Periodo</th>
+              <th class="th-p" colspan="2">Primera (Turista)</th>
+              <th class="th-s" colspan="2">Superior (Primera)</th>
+              <th class="th-l" colspan="2">Lujo (1ª Sup.)</th>
+              <th class="th-act"></th>
+            </tr>
+            <tr>
+              <th class="th-range">Desde</th>
+              <th class="th-range">Hasta</th>
+              <th class="th-p">DBL</th>
+              <th class="th-p">SGL</th>
+              <th class="th-s">DBL</th>
+              <th class="th-s">SGL</th>
+              <th class="th-l">DBL</th>
+              <th class="th-l">SGL</th>
+              <th class="th-act"></th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <button class="btn-add-period" onclick="addPeriod(this)">+ Añadir periodo</button>
+    </div>
+  </div>`;
+}
+
+function renderAll() {
+  document.getElementById('circuits-container').innerHTML =
+    circuitos.map(c => circuitCardHTML(c)).join('');
+}
+
+/* ═══════════════════════════════════════
+   ACCIONES DE TARJETA
+═══════════════════════════════════════ */
+function toggleCard(headEl) {
+  const body = headEl.nextElementSibling;
+  const isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : 'block';
+  headEl.querySelector('.toggle').textContent = isOpen ? '▶' : '▼';
+}
+
+function removeRow(btn) {
+  btn.closest('.tarifa-row').remove();
+}
+
+function addPeriod(btn) {
+  const tbody = btn.previousElementSibling.querySelector('tbody');
+  const empty = { de:'', a:'', P_DBL:0, P_SGL:0, S_DBL:0, S_SGL:0, L_DBL:0, L_SGL:0 };
+  tbody.insertAdjacentHTML('beforeend', tarifaRowHTML(empty));
+  tbody.lastElementChild.querySelector('input[type="date"]').focus();
+}
+
+function syncHeader(input) {
+  input.closest('.circ-card').querySelector('.cnombre').textContent = input.value.trim() || '(sin nombre)';
+}
+
+function deleteCircuito(evt, btn) {
+  evt.stopPropagation();
+  const card = btn.closest('.circ-card');
+  const nombre = card.querySelector('[data-f="nombre"]').value.trim() || card.dataset.id;
+  if (!confirm(`¿Eliminar el circuito "${nombre}"? Esta acción se aplicará al guardar.`)) return;
+  card.remove();
+}
+
+function addCircuito() {
+  const newId = 'C' + Date.now();
+  const nuevo = {
+    id: newId, nombre: 'Nuevo circuito', idOdoo: '', nombre_circuito: '', min_pax: 0,
+    noches: 0, proveedor: '', vuelos_int: '', vuelos_internos: '', nota: '', tarifas: []
+  };
+  document.getElementById('circuits-container').insertAdjacentHTML('beforeend', circuitCardHTML(nuevo));
+  const newCard = document.querySelector(`.circ-card[data-id="${newId}"]`);
+  newCard.scrollIntoView({ behavior: 'smooth' });
+  newCard.querySelector('[data-f="nombre"]').focus();
+}
+
+/* ═══════════════════════════════════════
+   INIT
+═══════════════════════════════════════ */
+loadData();
+renderAll();
+</script>
+</body>
+</html>
