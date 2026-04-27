@@ -97,6 +97,21 @@
       appearance: none; -webkit-appearance: none;
     }
     select:focus, input:focus { outline: none; border-color: var(--azul-med); background: #fff; }
+    input:disabled {
+      background: var(--azul-claro);
+      border-color: #c3d4ee;
+      color: var(--azul);
+      font-weight: 700;
+      cursor: default;
+      opacity: 1;
+    }
+    input[type="number"][readonly] {
+      background: var(--azul-claro);
+      border-color: #c3d4ee;
+      color: var(--azul);
+      font-weight: 700;
+      cursor: pointer;
+    }
 
     .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
     .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .75rem; }
@@ -265,6 +280,58 @@
       padding: .1rem .35rem; border-radius: 3px;
       margin-left: .3rem; vertical-align: middle;
     }
+
+    /* ── Modal duración ── */
+    .modal-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.45);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-box {
+      background: #fff;
+      border-radius: 14px;
+      padding: 1.6rem 1.8rem;
+      max-width: 400px; width: 92%;
+      box-shadow: 0 8px 32px rgba(0,0,0,.22);
+    }
+    .modal-box .modal-icon { font-size: 1.6rem; margin-bottom: .6rem; }
+    .modal-box p { font-size: .92rem; line-height: 1.55; color: var(--texto); }
+    .modal-actions { display: flex; gap: .65rem; justify-content: flex-end; margin-top: 1.2rem; }
+    .btn-modal-si {
+      background: var(--azul); color: #fff; border: none;
+      border-radius: 7px; padding: .52rem 1.3rem;
+      font-weight: 700; font-size: .85rem; cursor: pointer;
+    }
+    .btn-modal-si:hover { background: var(--azul-med); }
+    .btn-modal-no {
+      background: var(--gris-fondo); color: var(--texto);
+      border: 1.5px solid var(--gris-borde);
+      border-radius: 7px; padding: .5rem 1.2rem;
+      font-weight: 700; font-size: .85rem; cursor: pointer;
+    }
+    .btn-modal-no:hover { background: #e5e7eb; }
+
+    .error-duracion {
+      font-size: .72rem; color: #991b1b;
+      background: #fee2e2; border-left: 3px solid #dc2626;
+      padding: .35rem .55rem; border-radius: 0 4px 4px 0;
+      margin-top: .45rem; font-weight: 600;
+    }
+
+    .field-obligatorio {
+      background: #fffbeb;
+      border: 1.5px solid #fbbf24;
+      border-radius: 8px;
+      padding: .65rem .8rem;
+      margin-bottom: .85rem;
+    }
+    .field-obligatorio label { color: #92400e; }
+    .field-obligatorio input { background: #fff; border-color: #fbbf24; }
+    .field-obligatorio input:focus { border-color: #d97706; }
   </style>
 </head>
 <body>
@@ -275,6 +342,7 @@
     <div class="sub">Cotizador de Viajes · Argentina</div>
   </div>
   <div class="badge">Nuevo Tarifario 2026</div>
+  <a href="admin.html" style="font-size:.7rem; color:rgba(255,255,255,.45); text-decoration:none; margin-left:.5rem;" title="Actualizar tarifarios (Producto)">⚙ Admin</a>
 </header>
 
 <div class="layout">
@@ -295,7 +363,19 @@
         <div id="info-circ" style="display:none" class="info-circ">
           <div class="ruta" id="ic-vuelos-int"></div>
           <div class="ruta" id="ic-vuelos-internos" style="font-size:.76rem; margin-top:.15rem;"></div>
-          <div class="meta" id="ic-meta"></div>
+          <div class="meta" id="ic-proveedor-row" style="margin-top:.35rem;">
+            <span style="text-transform:uppercase; letter-spacing:.04em; font-size:.68rem; opacity:.75;">Nombre proveedor: </span><span id="ic-proveedor-nombre" style="font-weight:700; color:var(--azul);"></span>
+          </div>
+          <div class="meta" id="ic-noches-row" style="margin-top:.2rem; display:none;">
+            <span style="text-transform:uppercase; letter-spacing:.04em; font-size:.68rem; opacity:.75;">Noches en destino: </span><span id="ic-noches" style="font-weight:700; color:var(--azul);"></span>
+          </div>
+          <div class="meta" id="ic-nombre-circ-row" style="margin-top:.2rem; display:none;">
+            <span style="text-transform:uppercase; letter-spacing:.04em; font-size:.68rem; opacity:.75;">Nombre circuito: </span><span id="ic-nombre-circ" style="font-weight:700; color:var(--azul);"></span>
+          </div>
+          <div class="meta" id="ic-min-pax-row" style="margin-top:.2rem; display:none;">
+            <span style="text-transform:uppercase; letter-spacing:.04em; font-size:.68rem; opacity:.75;">Mínimo de pasajeros: </span><span id="ic-min-pax" style="font-weight:700; color:var(--azul);"></span>
+          </div>
+          <div class="meta" id="ic-meta" style="display:none"></div>
           <div class="nota" id="ic-nota" style="display:none"></div>
         </div>
       </div>
@@ -328,14 +408,17 @@
         <div class="row2">
           <div class="field">
             <label>N.° Adultos</label>
-            <input type="number" id="n-adultos" min="1" value="2"
-                   oninput="onPaxChange(); calculate()" />
+            <input type="number" id="n-adultos" min="2" max="2" value="2"
+                   oninput="onPaxChange(); calculate()" disabled />
           </div>
           <div class="field">
             <label>N.° Niños <span style="font-weight:400; text-transform:none;">(compartiendo cama)</span></label>
             <input type="number" id="n-ninos" min="0" value="0"
                    oninput="onPaxChange(); calculate()" />
           </div>
+        </div>
+        <div id="nota-sgl" class="nota-info" style="display:none">
+          Consultar grupo para cotizar 1 pasajero. Si no hay grupo, debes consultar el precio con el proveedor.
         </div>
       </div>
     </div>
@@ -355,6 +438,9 @@
           </div>
         </div>
         <div id="fecha-info"></div>
+        <div id="duracion-error" class="error-duracion" style="display:none;">
+          Por favor corregir las Fechas del Viaje.
+        </div>
       </div>
     </div>
 
@@ -370,7 +456,7 @@
             <div>
               <div class="sub-label">USD (del tarifario)</div>
               <input type="number" id="tierra-usd" min="0" step="0.01"
-                     placeholder="0.00" oninput="calculate()" />
+                     placeholder="0.00" oninput="calculate()" onclick="onTierraUsdClick()" />
             </div>
             <div class="arrow">→</div>
             <div>
@@ -378,6 +464,12 @@
               <div class="eur-box" id="tierra-eur">0,00 €</div>
             </div>
           </div>
+        </div>
+
+        <div id="field-ajuste-duracion" class="field-obligatorio" style="display:none;">
+          <label id="ajuste-duracion-label">Ajuste por duración reducida (€/pax) <span class="warn-tag">OBLIGATORIO</span></label>
+          <input type="number" id="c-ajuste-duracion" step="0.01" placeholder="Introduce 0 si no aplica"
+                 oninput="calculate()" />
         </div>
 
         <div class="sep"></div>
@@ -505,14 +597,25 @@
 
 </div><!-- /layout -->
 
+<div id="modal-duracion" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-icon">⚠️</div>
+    <p id="modal-duracion-msg"></p>
+    <div class="modal-actions">
+      <button class="btn-modal-no" onclick="onDuracionNo()">No</button>
+      <button class="btn-modal-si" onclick="onDuracionSi()">Sí</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ═══════════════════════════════════════════
    BASE DE DATOS DE CIRCUITOS Y TARIFAS
-   - C1, C2: precios 2025/2026 (Argentina 2026.xlsx)
-   - C3, C4: precios 2024 (actualizar con tarifario vigente)
-   - C5:     precios 2025 (actualizar con tarifario vigente)
+   Los precios se cargan desde localStorage (gv_circuitos),
+   actualizado por el equipo de Producto desde admin.html.
+   Si no hay datos guardados, se usan los valores por defecto.
 ═══════════════════════════════════════════ */
-const CIRCUITOS = [
+const CIRCUITOS_DEFAULT = [
   {
     id: 'C1',
     nombre: 'Viaje a la Patagonia de Argentina: entre glaciares y tango de 15 días',
@@ -589,23 +692,34 @@ const CIRCUITOS = [
       { de:'2025-10-01', a:'2025-12-31', P_DBL:955,  P_SGL:1405, S_DBL:1225, S_SGL:1940, L_DBL:1490, L_SGL:2454 },
     ]
   },
-  {
-    id: 'MEDIDA',
-    nombre: 'Viaje a medida',
-    idOdoo: null,
-    proveedor: 'A medida — introduce todos los costes manualmente',
-    vuelos_int:      '',
-    vuelos_internos: '',
-    nota: '',
-    tarifas: []
-  }
 ];
+
+const CIRCUITO_MEDIDA = {
+  id: 'MEDIDA', nombre: 'Viaje a medida', idOdoo: null,
+  proveedor: 'A medida — introduce todos los costes manualmente',
+  vuelos_int: '', vuelos_internos: '', nota: '', tarifas: []
+};
+
+function loadCircuitos() {
+  try {
+    const saved = localStorage.getItem('gv_circuitos');
+    if (saved) {
+      const data = JSON.parse(saved);
+      if (Array.isArray(data) && data.length > 0) return data;
+    }
+  } catch(e) {}
+  return [...CIRCUITOS_DEFAULT, CIRCUITO_MEDIDA];
+}
+
+const CIRCUITOS = loadCircuitos();
 
 /* ═══════════════════════════════════════════
    ESTADO
 ═══════════════════════════════════════════ */
 let circuito = null;
 let actId = 0;
+let duracionConfirmada = null; // null=sin verificar, true=confirmada, false=rechazada
+let duracionTipo = null;       // 'menor' | 'mayor' | null
 
 /* ═══════════════════════════════════════════
    INICIALIZACIÓN
@@ -624,6 +738,8 @@ let actId = 0;
   const salida = new Date(hoy);
   salida.setDate(salida.getDate() + 8);
   document.getElementById('f-salida').value = toISO(salida);
+
+  onConfigChange();
 })();
 
 /* ═══════════════════════════════════════════
@@ -632,6 +748,7 @@ let actId = 0;
 function onCircuitChange() {
   const id = document.getElementById('sel-circ').value;
   circuito = CIRCUITOS.find(c => c.id === id) || null;
+  resetDuracion();
 
   const box = document.getElementById('info-circ');
   if (!circuito) { box.style.display = 'none'; return; }
@@ -639,7 +756,32 @@ function onCircuitChange() {
   box.style.display = 'block';
   document.getElementById('ic-vuelos-int').textContent      = circuito.vuelos_int      ? '✈  ' + circuito.vuelos_int      : '';
   document.getElementById('ic-vuelos-internos').textContent = circuito.vuelos_internos ? '✈  ' + circuito.vuelos_internos : '';
+  document.getElementById('ic-proveedor-nombre').textContent = circuito.proveedor;
   document.getElementById('ic-meta').textContent            = circuito.proveedor;
+
+  const nochesRow = document.getElementById('ic-noches-row');
+  if (circuito.noches) {
+    document.getElementById('ic-noches').textContent = circuito.noches + ' noches';
+    nochesRow.style.display = 'block';
+  } else {
+    nochesRow.style.display = 'none';
+  }
+
+  const nombreCircRow = document.getElementById('ic-nombre-circ-row');
+  if (circuito.nombre_circuito) {
+    document.getElementById('ic-nombre-circ').textContent = circuito.nombre_circuito;
+    nombreCircRow.style.display = 'block';
+  } else {
+    nombreCircRow.style.display = 'none';
+  }
+
+  const minPaxRow = document.getElementById('ic-min-pax-row');
+  if (circuito.min_pax) {
+    document.getElementById('ic-min-pax').textContent = circuito.min_pax + ' pasajeros';
+    minPaxRow.style.display = 'block';
+  } else {
+    minPaxRow.style.display = 'none';
+  }
 
   const notaEl = document.getElementById('ic-nota');
   if (circuito.nota) { notaEl.textContent = circuito.nota; notaEl.style.display = 'block'; }
@@ -648,7 +790,27 @@ function onCircuitChange() {
   onDateChange();
 }
 
-function onConfigChange() { onDateChange(); }
+function onConfigChange() {
+  const hab = document.getElementById('sel-hab').value;
+  const nAdultosInput = document.getElementById('n-adultos');
+
+  if (hab === 'DBL') {
+    nAdultosInput.value = 2;
+    nAdultosInput.min   = 2;
+    nAdultosInput.max   = 2;
+    nAdultosInput.disabled = true;
+    document.getElementById('nota-sgl').style.display = 'none';
+  } else {
+    nAdultosInput.value = 1;
+    nAdultosInput.min   = 1;
+    nAdultosInput.max   = 1;
+    nAdultosInput.disabled = true;
+    document.getElementById('nota-sgl').style.display = 'block';
+  }
+
+  onPaxChange();
+  onDateChange();
+}
 
 function onPaxChange() {
   const ninos = parseInt(document.getElementById('n-ninos').value) || 0;
@@ -659,32 +821,38 @@ function onDateChange() {
   const llegada = document.getElementById('f-llegada').value;
   const salida  = document.getElementById('f-salida').value;
   const el      = document.getElementById('fecha-info');
+  const tierraUsd = document.getElementById('tierra-usd');
+
+  tierraUsd.removeAttribute('readonly');
 
   if (!llegada) { el.innerHTML = ''; return; }
 
   const dLlegada = parseDate(llegada);
   let html = '';
+  let nochesViaje = 0;
 
   if (salida) {
     const dSalida = parseDate(salida);
-    const noches  = Math.round((dSalida - dLlegada) / 86400000);
-    if (noches > 0) html += `<span style="font-size:.78rem; color:var(--subtexto);">${noches} noche${noches !== 1 ? 's' : ''} en destino</span>`;
+    nochesViaje = Math.round((dSalida - dLlegada) / 86400000);
+    if (nochesViaje > 0) html += `<span style="font-size:.78rem; color:var(--subtexto);">${nochesViaje} noche${nochesViaje !== 1 ? 's' : ''} en destino</span>`;
   }
 
   if (circuito && circuito.id !== 'MEDIDA') {
     const tarifa = lookupTarifa(circuito, dLlegada);
     if (tarifa) {
       const key = buildKey();
-      document.getElementById('tierra-usd').value = tarifa[key] ?? '';
+      tierraUsd.value = tarifa[key] ?? '';
+      tierraUsd.setAttribute('readonly', '');
       const temp = fmtTemp(tarifa);
       html += ` <span class="badge-temp t-ok">✓ Temporada: ${temp}</span>`;
     } else {
-      document.getElementById('tierra-usd').value = '';
+      tierraUsd.value = '';
       html += ` <span class="badge-temp t-err">⚠ Fecha fuera del tarifario — introduce el precio manualmente</span>`;
     }
   }
 
   el.innerHTML = html;
+  checkDuracion(nochesViaje);
   calculate();
 }
 
@@ -764,10 +932,35 @@ function calculate() {
   const extras    = parseFloat(document.getElementById('c-extras').value)       || 0;
   const seguro    = parseFloat(document.getElementById('c-seguro').value)       || 0;
 
-  const coste_a   = tierra_eur + otros + noche + traslado + cena + activs + vInt + vInterno + extras + seguro;
-  const pvp_a     = divisor > 0 ? coste_a / divisor : 0;
-  const nA        = Math.max(0, parseInt(document.getElementById('n-adultos').value) || 0);
-  const total_a   = pvp_a * nA;
+  const ajusteVisible = document.getElementById('field-ajuste-duracion').style.display !== 'none';
+  const ajusteStr     = document.getElementById('c-ajuste-duracion').value;
+
+  if (document.getElementById('modal-duracion').classList.contains('active')) {
+    document.getElementById('res-body').innerHTML = `<div class="empty">
+      <div class="ico">⚠</div>
+      <p>Confirma el aviso de duración<br>para ver el PVP.</p></div>`;
+    return;
+  }
+  if (duracionConfirmada === false) {
+    document.getElementById('res-body').innerHTML = `<div class="empty">
+      <div class="ico">⚠</div>
+      <p>Por favor corregir las<br><strong>Fechas del Viaje</strong></p></div>`;
+    return;
+  }
+  if (ajusteVisible && ajusteStr === '') {
+    document.getElementById('res-body').innerHTML = `<div class="empty">
+      <div class="ico">⚠</div>
+      <p>Introduce el <strong>Ajuste por duración reducida</strong><br>(puede ser 0) para calcular el PVP.</p></div>`;
+    return;
+  }
+  const ajuste = ajusteVisible ? (parseFloat(ajusteStr) || 0) : 0;
+
+  const coste_a        = tierra_eur + otros + noche + traslado + cena + activs + vInt + vInterno + extras + seguro + ajuste;
+  const pvp_a          = divisor > 0 ? coste_a / divisor : 0;
+  const pvp_servicios  = divisor > 0 ? (coste_a - seguro) / divisor : 0;
+  const pvp_seguro_pvp = divisor > 0 ? seguro / divisor : 0;
+  const nA             = Math.max(0, parseInt(document.getElementById('n-adultos').value) || 0);
+  const total_a        = pvp_a * nA;
 
   // ── Niños ──
   const nN = Math.max(0, parseInt(document.getElementById('n-ninos').value) || 0);
@@ -787,7 +980,8 @@ function calculate() {
 
   renderResults({
     tierra_eur, otros, noche, traslado, cena, activs,
-    vInt, vInterno, extras, seguro, coste_a, pvp_a, nA, total_a,
+    vInt, vInterno, extras, seguro, ajuste, ajusteVisible,
+    coste_a, pvp_a, pvp_servicios, pvp_seguro_pvp, nA, total_a,
     coste_n, pvp_n, nN, total_n,
     pvp_total, margenP, divisor
   });
@@ -816,6 +1010,7 @@ function renderResults(d) {
     { l: 'Vuelos internos',            v: d.vInterno,    show: d.vInterno  > 0 },
     { l: 'Extras varios',              v: d.extras,      show: d.extras    > 0 },
     { l: 'Seguro de viaje',            v: d.seguro,      show: d.seguro    > 0 },
+    { l: 'Ajuste duración reducida',   v: d.ajuste,      show: d.ajusteVisible },
   ];
 
   let html = `<div class="sec-label">Costes por persona — adulto</div>`;
@@ -827,9 +1022,15 @@ function renderResults(d) {
     <span class="val">${fmt(d.coste_a)}</span>
   </div>`;
   html += `<div class="bl-sub verde">
-    <span class="lbl">PVP / pax adulto</span>
-    <span class="val">${fmt(d.pvp_a)}</span>
+    <span class="lbl">PVP servicios / pax</span>
+    <span class="val">${fmt(d.pvp_servicios)}</span>
   </div>`;
+  if (d.seguro > 0) {
+    html += `<div class="bl-sub verde">
+      <span class="lbl">PVP seguro / pax</span>
+      <span class="val">${fmt(d.pvp_seguro_pvp)}</span>
+    </div>`;
+  }
 
   if (d.nN > 0) {
     html += `<div class="sep"></div>`;
@@ -855,6 +1056,86 @@ function renderResults(d) {
   }
 
   el.innerHTML = html;
+}
+
+/* ═══════════════════════════════════════════
+   VALIDACIÓN DURACIÓN DEL VIAJE
+═══════════════════════════════════════════ */
+function checkDuracion(nochesViaje) {
+  const noches = circuito && circuito.noches;
+  if (!noches || !circuito || circuito.id === 'MEDIDA' || nochesViaje <= 0) {
+    resetDuracion(); return;
+  }
+  if (nochesViaje === noches) {
+    resetDuracion(); return;
+  }
+
+  const tipo = nochesViaje < noches ? 'menor' : 'mayor';
+
+  // Si cambia el tipo (ej: de menor pasó a mayor), resetear y re-evaluar
+  if (duracionTipo !== null && duracionTipo !== tipo) {
+    resetDuracion();
+  }
+  duracionTipo = tipo;
+
+  const modal = document.getElementById('modal-duracion');
+  if (duracionConfirmada === null && !modal.classList.contains('active')) {
+    document.getElementById('modal-duracion-msg').textContent =
+      tipo === 'menor'
+        ? 'El viaje tiene una duración menor al contrato. ¿Es correcto?'
+        : 'El viaje tiene una duración mayor al contrato. ¿Es correcto?';
+    document.getElementById('ajuste-duracion-label').innerHTML =
+      tipo === 'menor'
+        ? 'Ajuste por duración reducida (€/pax) <span class="warn-tag">OBLIGATORIO</span>'
+        : 'Ajuste por noches adicionales (€/pax) <span class="warn-tag">OBLIGATORIO</span>';
+    modal.classList.add('active');
+  } else if (duracionConfirmada === true) {
+    document.getElementById('field-ajuste-duracion').style.display = 'block';
+    document.getElementById('duracion-error').style.display = 'none';
+  } else if (duracionConfirmada === false) {
+    document.getElementById('duracion-error').style.display = 'block';
+    document.getElementById('field-ajuste-duracion').style.display = 'none';
+  }
+}
+
+function resetDuracion() {
+  duracionConfirmada = null;
+  duracionTipo = null;
+  document.getElementById('modal-duracion').classList.remove('active');
+  document.getElementById('field-ajuste-duracion').style.display = 'none';
+  document.getElementById('c-ajuste-duracion').value = '';
+  document.getElementById('duracion-error').style.display = 'none';
+}
+
+function onDuracionSi() {
+  duracionConfirmada = true;
+  document.getElementById('modal-duracion').classList.remove('active');
+  document.getElementById('field-ajuste-duracion').style.display = 'block';
+  document.getElementById('duracion-error').style.display = 'none';
+  document.getElementById('c-ajuste-duracion').focus();
+  calculate();
+}
+
+function onDuracionNo() {
+  duracionConfirmada = false;
+  document.getElementById('modal-duracion').classList.remove('active');
+  document.getElementById('duracion-error').style.display = 'block';
+  document.getElementById('field-ajuste-duracion').style.display = 'none';
+  calculate();
+}
+
+/* ═══════════════════════════════════════════
+   PROTECCIÓN PRECIO CONTRATO
+═══════════════════════════════════════════ */
+function onTierraUsdClick() {
+  const el = document.getElementById('tierra-usd');
+  if (!el.readOnly) return;
+  const ok = confirm('Estás a punto de cambiar el precio del contrato.\n¿Quieres continuar?');
+  if (ok) {
+    el.removeAttribute('readonly');
+    el.focus();
+    el.select();
+  }
 }
 
 /* ═══════════════════════════════════════════
